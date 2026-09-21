@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# 1. Self-contained dataset (No internet needed)
+
 print("Loading dataset...")
 data = {
     'title': [
@@ -24,16 +24,16 @@ data = {
 df = pd.DataFrame(data)
 print(f"Dataset Loaded Successfully! Total items: {len(df)}")
 
-# 2. Vectorize text descriptions using TF-IDF
+
 print("Converting text overviews into numbers (TF-IDF)...")
 tfidf = TfidfVectorizer(stop_words='english')
 tfidf_matrix = tfidf.fit_transform(df['overview'])
 
-# 3. Calculate Cosine Similarity
+
 print("Calculating similarity matrix...")
 similarity_matrix = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
-# 4. Recommendation Function
+
 def recommend(movie_title, top_n=2):
     matches = df[df['title'].str.lower() == movie_title.lower()]
     
@@ -47,7 +47,6 @@ def recommend(movie_title, top_n=2):
     recommended_indices = [item[0] for item in sorted_scores[1:top_n+1]]
     return df[['title', 'overview']].iloc[recommended_indices]
 
-# Test recommendations
 print("\n--- Recommendations for 'Avatar' ---")
 print(recommend('Avatar'))
 
