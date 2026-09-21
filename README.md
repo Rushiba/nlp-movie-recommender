@@ -22,3 +22,9 @@ An end-to-end Natural Language Processing (NLP) recommendation system built with
 ├── recommender.py     # Main Python recommendation script
 ├── requirements.txt   # Project dependencies
 └── README.md          # Project documentation
+
+---
+
+## Visual Output
+
+![Cosine Similarity Heatmap & Recommendations](output.png)
