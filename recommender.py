@@ -1,15 +1,15 @@
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-
-
-print("Loading dataset...")
 data = {
     'title': [
-        'Avatar', 
-        'John Carter', 
-        'The Dark Knight Rises', 
-        'Spectre', 
+        'Avatar',
+        'John Carter',
+        'The Dark Knight Rises',
+        'Spectre',
         'Spider-Man 3'
     ],
     'overview': [
@@ -22,33 +22,63 @@ data = {
 }
 
 df = pd.DataFrame(data)
-print(f"Dataset Loaded Successfully! Total items: {len(df)}")
 
 
-print("Converting text overviews into numbers (TF-IDF)...")
 tfidf = TfidfVectorizer(stop_words='english')
 tfidf_matrix = tfidf.fit_transform(df['overview'])
 
+cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
-print("Calculating similarity matrix...")
-similarity_matrix = cosine_similarity(tfidf_matrix, tfidf_matrix)
-
-
-def recommend(movie_title, top_n=2):
-    matches = df[df['title'].str.lower() == movie_title.lower()]
+def get_recommendations(title, sim_matrix=cosine_sim, df=df):
+    indices = pd.Series(df.index, index=df['title']).drop_duplicates()
+    idx = indices[title]
     
-    if matches.empty:
-        return f"Movie '{movie_title}' not found in dataset."
-        
-    idx = matches.index[0]
-    scores = list(enumerate(similarity_matrix[idx]))
-    sorted_scores = sorted(scores, key=lambda x: x[1], reverse=True)
+    sim_scores = list(enumerate(sim_matrix[idx]))
+  
+    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
+  
+    sim_scores = sim_scores[1:]
     
-    recommended_indices = [item[0] for item in sorted_scores[1:top_n+1]]
-    return df[['title', 'overview']].iloc[recommended_indices]
+    movie_indices = [i[0] for i in sim_scores]
+    scores = [i[1] for i in sim_scores]
+    
+    result_df = df.iloc[movie_indices].copy()
+    result_df['similarity_score'] = scores
+    return result_df
 
-print("\n--- Recommendations for 'Avatar' ---")
-print(recommend('Avatar'))
+target_movie = 'Avatar'
+recommendations = get_recommendations(target_movie)
+print(f"--- Recommendations for '{target_movie}' ---")
+print(recommendations[['title', 'similarity_score']])
 
-print("\n--- Recommendations for 'The Dark Knight Rises' ---")
-print(recommend('The Dark Knight Rises'))
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+sns.heatmap(
+    cosine_sim, 
+    annot=True, 
+    fmt=".2f", 
+    cmap="YlGnBu", 
+    xticklabels=df['title'], 
+    yticklabels=df['title'],
+    ax=axes[0]
+)
+axes[0].set_title("Cosine Similarity Heatmap", fontsize=12, fontweight='bold')
+axes[0].tick_params(axis='x', rotation=45)
+
+sns.barplot(
+    x='similarity_score', 
+    y='title', 
+    data=recommendations, 
+    palette="Blues_r", 
+    ax=axes[1]
+)
+axes[1].set_title(f"Top Recommendations for '{target_movie}'", fontsize=12, fontweight='bold')
+axes[1].set_xlabel("Similarity Score")
+axes[1].set_ylabel("Movie Title")
+
+plt.tight_layout()
+
+plt.savefig("output.png", dpi=300)
+print("\n[SUCCESS] Heatmap & Recommendation Bar Chart saved as 'output.png'.")
+
+plt.show()
